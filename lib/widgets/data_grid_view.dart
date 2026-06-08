@@ -297,7 +297,11 @@ class _DataGridViewState extends State<DataGridView> {
                     onSort: (_, _) => _sort(c),
                   ),
                 ),
-                if (!widget.readOnly) const DataColumn(label: Text('操作'), columnWidth: FixedColumnWidth(0)),
+                if (!widget.readOnly)
+                  const DataColumn(
+                    label: Text('操作'),
+                    columnWidth: FixedColumnWidth(0),
+                  ),
               ],
               rows: page.rows.map((row) {
                 return DataRow(

@@ -88,8 +88,10 @@ class _HomeScreenState extends State<HomeScreen>
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('上書き確認'),
-          content: Text('${p.basename(path)} は既に存在します。'
-              '削除して新規作成しますか？'),
+          content: Text(
+            '${p.basename(path)} は既に存在します。'
+            '削除して新規作成しますか？',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -120,8 +122,11 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('データベースを作成しました。'
-                  'SQLタブでCREATE TABLE文を実行してテーブルを作成できます。')),
+            content: Text(
+              'データベースを作成しました。'
+              'SQLタブでCREATE TABLE文を実行してテーブルを作成できます。',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -160,7 +165,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dbName = _dbService.path != null ? p.basename(_dbService.path!) : null;
+    final dbName = _dbService.path != null
+        ? p.basename(_dbService.path!)
+        : null;
 
     return Scaffold(
       body: CallbackShortcuts(
@@ -181,10 +188,22 @@ class _HomeScreenState extends State<HomeScreen>
                   color: Theme.of(context).colorScheme.surface,
                   child: TabBar(
                     controller: _tabController,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.grey,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     tabs: const [
-                      Tab(icon: Icon(Icons.table_rows), text: 'データ'),
-                      Tab(icon: Icon(Icons.schema), text: 'スキーマ'),
-                      Tab(icon: Icon(Icons.code), text: 'SQL'),
+                      Tab(
+                        child: _TabLabel(icon: Icons.table_rows, text: 'データ'),
+                      ),
+                      Tab(
+                        child: _TabLabel(icon: Icons.schema, text: 'スキーマ'),
+                      ),
+                      Tab(
+                        child: _TabLabel(icon: Icons.code, text: 'SQL'),
+                      ),
                     ],
                   ),
                 ),
@@ -201,39 +220,39 @@ class _HomeScreenState extends State<HomeScreen>
     return _loading
         ? const Center(child: CircularProgressIndicator())
         : !_dbService.isOpen
-            ? _buildWelcome()
-            : Row(
+        ? _buildWelcome()
+        : Row(
+            children: [
+              _buildSidebar(),
+              const VerticalDivider(width: 1),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
                   children: [
-                    _buildSidebar(),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _selectedTable != null
-                              ? DataGridView(
-                                  key: ValueKey('data-$_selectedTable'),
-                                  dbService: _dbService,
-                                  table: _selectedTable!,
-                                  readOnly: _views.contains(_selectedTable),
-                                )
-                              : const Center(child: Text('テーブルを選択してください')),
-                          _selectedTable != null
-                              ? SchemaView(
-                                  key: ValueKey('schema-$_selectedTable'),
-                                  dbService: _dbService,
-                                  table: _selectedTable!,
-                                )
-                              : const Center(child: Text('テーブルを選択してください')),
-                          SqlView(
+                    _selectedTable != null
+                        ? DataGridView(
+                            key: ValueKey('data-$_selectedTable'),
                             dbService: _dbService,
-                            onSchemaChanged: _refreshTables,
-                          ),
-                        ],
-                      ),
+                            table: _selectedTable!,
+                            readOnly: _views.contains(_selectedTable),
+                          )
+                        : const Center(child: Text('テーブルを選択してください')),
+                    _selectedTable != null
+                        ? SchemaView(
+                            key: ValueKey('schema-$_selectedTable'),
+                            dbService: _dbService,
+                            table: _selectedTable!,
+                          )
+                        : const Center(child: Text('テーブルを選択してください')),
+                    SqlView(
+                      dbService: _dbService,
+                      onSchemaChanged: _refreshTables,
                     ),
                   ],
-                );
+                ),
+              ),
+            ],
+          );
   }
 
   Widget _buildMenuBar(String? dbName) {
@@ -248,15 +267,19 @@ class _HomeScreenState extends State<HomeScreen>
                 menuChildren: [
                   MenuItemButton(
                     onPressed: _createDatabase,
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyN,
-                        control: true),
+                    shortcut: const SingleActivator(
+                      LogicalKeyboardKey.keyN,
+                      control: true,
+                    ),
                     leadingIcon: const Icon(Icons.note_add, size: 18),
                     child: const Text('新規作成...'),
                   ),
                   MenuItemButton(
                     onPressed: _openDatabase,
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyO,
-                        control: true),
+                    shortcut: const SingleActivator(
+                      LogicalKeyboardKey.keyO,
+                      control: true,
+                    ),
                     leadingIcon: const Icon(Icons.folder_open, size: 18),
                     child: const Text('開く...'),
                   ),
@@ -305,7 +328,9 @@ class _HomeScreenState extends State<HomeScreen>
             child: Text(
               dbName,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.grey),
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
             ),
           ),
       ],
@@ -327,9 +352,7 @@ class _HomeScreenState extends State<HomeScreen>
       applicationName: 'SQLite Viewer',
       applicationVersion: '1.0.0',
       applicationIcon: const Icon(Icons.storage, size: 48),
-      children: [
-        const Text('SQLiteデータベースの閲覧・編集ツール'),
-      ],
+      children: [const Text('SQLiteデータベースの閲覧・編集ツール')],
     );
   }
 
@@ -340,8 +363,10 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Icon(Icons.storage, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          const Text('SQLiteデータベースファイルを開いてください',
-              style: TextStyle(fontSize: 16)),
+          const Text(
+            'SQLiteデータベースファイルを開いてください',
+            style: TextStyle(fontSize: 16),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -372,25 +397,29 @@ class _HomeScreenState extends State<HomeScreen>
           if (_tables.isNotEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text('テーブル',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              child: Text(
+                'テーブル',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
             ),
-          ..._tables.map((t) => _buildItemTile(
-                name: t,
-                icon: Icons.table_chart,
-              )),
+          ..._tables.map(
+            (t) => _buildItemTile(name: t, icon: Icons.table_chart),
+          ),
           if (_views.isNotEmpty)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text('ビュー',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              child: Text(
+                'ビュー',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
             ),
-          ..._views.map((v) => _buildItemTile(
-                name: v,
-                icon: Icons.visibility,
-              )),
+          ..._views.map((v) => _buildItemTile(name: v, icon: Icons.visibility)),
         ],
       ),
     );
@@ -404,9 +433,11 @@ class _HomeScreenState extends State<HomeScreen>
       child: ListTile(
         dense: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        leading: Icon(icon,
-            size: 18,
-            color: selected ? colorScheme.onPrimary : null),
+        leading: Icon(
+          icon,
+          size: 18,
+          color: selected ? colorScheme.onPrimary : null,
+        ),
         title: Text(
           name,
           overflow: TextOverflow.ellipsis,
@@ -419,6 +450,22 @@ class _HomeScreenState extends State<HomeScreen>
         selectedTileColor: colorScheme.primary,
         onTap: () => setState(() => _selectedTable = name),
       ),
+    );
+  }
+}
+
+/// アイコンとテキストを横並びにしたタブラベル
+class _TabLabel extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _TabLabel({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(text)],
     );
   }
 }

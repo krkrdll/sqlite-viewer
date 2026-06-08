@@ -8,11 +8,7 @@ class RowEditorDialog extends StatefulWidget {
   final List<ColumnInfo> columns;
   final Map<String, Object?>? initialValues; // nullなら新規追加
 
-  const RowEditorDialog({
-    super.key,
-    required this.columns,
-    this.initialValues,
-  });
+  const RowEditorDialog({super.key, required this.columns, this.initialValues});
 
   @override
   State<RowEditorDialog> createState() => _RowEditorDialogState();
@@ -30,10 +26,12 @@ class _RowEditorDialogState extends State<RowEditorDialog> {
     _controllers = {};
     _isNull = {};
     for (final col in widget.columns) {
-      final value =
-          widget.initialValues != null ? widget.initialValues![col.name] : null;
-      _controllers[col.name] =
-          TextEditingController(text: value?.toString() ?? '');
+      final value = widget.initialValues != null
+          ? widget.initialValues![col.name]
+          : null;
+      _controllers[col.name] = TextEditingController(
+        text: value?.toString() ?? '',
+      );
       _isNull[col.name] = _isEdit ? value == null : !col.notNull;
     }
   }
@@ -114,8 +112,9 @@ class _RowEditorDialogState extends State<RowEditorDialog> {
                         value: isNull,
                         onChanged: col.notNull
                             ? null
-                            : (v) =>
-                                setState(() => _isNull[col.name] = v ?? false),
+                            : (v) => setState(
+                                () => _isNull[col.name] = v ?? false,
+                              ),
                       ),
                       const Text('NULL', style: TextStyle(fontSize: 12)),
                     ],
@@ -131,10 +130,7 @@ class _RowEditorDialogState extends State<RowEditorDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('キャンセル'),
         ),
-        FilledButton(
-          onPressed: _save,
-          child: const Text('保存'),
-        ),
+        FilledButton(onPressed: _save, child: const Text('保存')),
       ],
     );
   }

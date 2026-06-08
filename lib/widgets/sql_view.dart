@@ -9,18 +9,13 @@ class SqlView extends StatefulWidget {
   final DatabaseService dbService;
   final VoidCallback? onSchemaChanged;
 
-  const SqlView({
-    super.key,
-    required this.dbService,
-    this.onSchemaChanged,
-  });
+  const SqlView({super.key, required this.dbService, this.onSchemaChanged});
 
   @override
   State<SqlView> createState() => _SqlViewState();
 }
 
-class _SqlViewState extends State<SqlView>
-    with AutomaticKeepAliveClientMixin {
+class _SqlViewState extends State<SqlView> with AutomaticKeepAliveClientMixin {
   final _controller = TextEditingController();
   QueryResult? _result;
   String? _error;
@@ -81,9 +76,9 @@ class _SqlViewState extends State<SqlView>
       if (path == null) return;
       await widget.dbService.saveCsvFile(csv, path);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('CSVを保存しました: $path')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('CSVを保存しました: $path')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,13 +99,14 @@ class _SqlViewState extends State<SqlView>
           padding: const EdgeInsets.all(12),
           child: TextField(
             controller: _controller,
-            maxLines: 6,
-            minLines: 3,
+            maxLines: 8,
+            minLines: 4,
             style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               hintText: 'SELECT * FROM table_name LIMIT 100;',
               labelText: 'SQL',
+              floatingLabelBehavior: FloatingLabelBehavior.always,
             ),
           ),
         ),
@@ -141,9 +137,9 @@ class _SqlViewState extends State<SqlView>
                 Text(
                   _result!.isSelect
                       ? '${_result!.rows.length} 行 '
-                          '(${_result!.elapsed.inMilliseconds} ms)'
+                            '(${_result!.elapsed.inMilliseconds} ms)'
                       : '${_result!.affectedRows} 行に影響 '
-                          '(${_result!.elapsed.inMilliseconds} ms)',
+                            '(${_result!.elapsed.inMilliseconds} ms)',
                   style: const TextStyle(color: Colors.grey),
                 ),
             ],
@@ -169,14 +165,15 @@ class _SqlViewState extends State<SqlView>
     final result = _result;
     if (result == null) {
       return const Center(
-        child: Text('SQLを入力して実行してください',
-            style: TextStyle(color: Colors.grey)),
+        child: Text('SQLを入力して実行してください', style: TextStyle(color: Colors.grey)),
       );
     }
     if (!result.isSelect) {
       return Center(
-        child: Text('${result.affectedRows} 行に影響しました',
-            style: const TextStyle(fontSize: 16)),
+        child: Text(
+          '${result.affectedRows} 行に影響しました',
+          style: const TextStyle(fontSize: 16),
+        ),
       );
     }
     if (result.rows.isEmpty) {
@@ -192,22 +189,27 @@ class _SqlViewState extends State<SqlView>
             constraints: BoxConstraints(minWidth: constraints.maxWidth),
             child: DataTable(
               headingRowHeight: 40,
-          dataRowMinHeight: 32,
-          dataRowMaxHeight: 40,
-          columns: result.columns
-              .map((c) => DataColumn(
-                    label: Text(c,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold)),
-                  ))
-              .toList(),
-          rows: result.rows
-              .map((row) => DataRow(
-                    cells: result.columns
-                        .map((c) => DataCell(_buildCell(row[c])))
-                        .toList(),
-                  ))
-              .toList(),
+              dataRowMinHeight: 32,
+              dataRowMaxHeight: 40,
+              columns: result.columns
+                  .map(
+                    (c) => DataColumn(
+                      label: Text(
+                        c,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              rows: result.rows
+                  .map(
+                    (row) => DataRow(
+                      cells: result.columns
+                          .map((c) => DataCell(_buildCell(row[c])))
+                          .toList(),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ),
@@ -217,16 +219,23 @@ class _SqlViewState extends State<SqlView>
 
   Widget _buildCell(Object? value) {
     if (value == null) {
-      return const Text('NULL',
-          style: TextStyle(
-              color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 13));
+      return const Text(
+        'NULL',
+        style: TextStyle(
+          color: Colors.grey,
+          fontStyle: FontStyle.italic,
+          fontSize: 13,
+        ),
+      );
     }
     var text = value.toString();
     if (text.length > 200) {
       text = '${text.substring(0, 200)}…';
     }
-    return Text(text,
-        style: const TextStyle(fontSize: 13),
-        overflow: TextOverflow.ellipsis);
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 13),
+      overflow: TextOverflow.ellipsis,
+    );
   }
 }

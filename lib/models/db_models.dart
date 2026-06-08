@@ -17,13 +17,13 @@ class ColumnInfo {
   });
 
   factory ColumnInfo.fromMap(Map<String, Object?> map) => ColumnInfo(
-        cid: map['cid'] as int,
-        name: map['name'] as String,
-        type: (map['type'] as String?) ?? '',
-        notNull: (map['notnull'] as int? ?? 0) != 0,
-        defaultValue: map['dflt_value']?.toString(),
-        isPrimaryKey: (map['pk'] as int? ?? 0) != 0,
-      );
+    cid: map['cid'] as int,
+    name: map['name'] as String,
+    type: (map['type'] as String?) ?? '',
+    notNull: (map['notnull'] as int? ?? 0) != 0,
+    defaultValue: map['dflt_value']?.toString(),
+    isPrimaryKey: (map['pk'] as int? ?? 0) != 0,
+  );
 }
 
 /// インデックス定義

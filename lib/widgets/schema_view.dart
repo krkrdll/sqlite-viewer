@@ -9,11 +9,7 @@ class SchemaView extends StatefulWidget {
   final DatabaseService dbService;
   final String table;
 
-  const SchemaView({
-    super.key,
-    required this.dbService,
-    required this.table,
-  });
+  const SchemaView({super.key, required this.dbService, required this.table});
 
   @override
   State<SchemaView> createState() => _SchemaViewState();
@@ -73,21 +69,35 @@ class _SchemaViewState extends State<SchemaView> {
                 DataColumn(label: Text('PK')),
               ],
               rows: schema.columns
-                  .map((c) => DataRow(cells: [
+                  .map(
+                    (c) => DataRow(
+                      cells: [
                         DataCell(Text('${c.cid}')),
-                        DataCell(Text(c.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600))),
+                        DataCell(
+                          Text(
+                            c.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
                         DataCell(Text(c.type.isEmpty ? '—' : c.type)),
-                        DataCell(c.notNull
-                            ? const Icon(Icons.check, size: 16)
-                            : const SizedBox.shrink()),
+                        DataCell(
+                          c.notNull
+                              ? const Icon(Icons.check, size: 16)
+                              : const SizedBox.shrink(),
+                        ),
                         DataCell(Text(c.defaultValue ?? '—')),
-                        DataCell(c.isPrimaryKey
-                            ? const Icon(Icons.key,
-                                size: 16, color: Colors.amber)
-                            : const SizedBox.shrink()),
-                      ]))
+                        DataCell(
+                          c.isPrimaryKey
+                              ? const Icon(
+                                  Icons.key,
+                                  size: 16,
+                                  color: Colors.amber,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -101,18 +111,20 @@ class _SchemaViewState extends State<SchemaView> {
           Card(
             child: Column(
               children: schema.indexes
-                  .map((idx) => ListTile(
-                        dense: true,
-                        leading: Icon(
-                          idx.unique ? Icons.fingerprint : Icons.sort,
-                          size: 18,
-                        ),
-                        title: Text(idx.name),
-                        subtitle: Text(
-                          '${idx.unique ? 'UNIQUE — ' : ''}'
-                          '${idx.columns.join(', ')}',
-                        ),
-                      ))
+                  .map(
+                    (idx) => ListTile(
+                      dense: true,
+                      leading: Icon(
+                        idx.unique ? Icons.fingerprint : Icons.sort,
+                        size: 18,
+                      ),
+                      title: Text(idx.name),
+                      subtitle: Text(
+                        '${idx.unique ? 'UNIQUE — ' : ''}'
+                        '${idx.columns.join(', ')}',
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -126,11 +138,10 @@ class _SchemaViewState extends State<SchemaView> {
               tooltip: 'コピー',
               onPressed: schema.createSql != null
                   ? () {
-                      Clipboard.setData(
-                          ClipboardData(text: schema.createSql!));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('コピーしました')),
-                      );
+                      Clipboard.setData(ClipboardData(text: schema.createSql!));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('コピーしました')));
                     }
                   : null,
             ),

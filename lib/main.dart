@@ -26,6 +26,10 @@ class SqliteViewerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
         visualDensity: VisualDensity.compact,
       ),

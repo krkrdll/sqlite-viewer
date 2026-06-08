@@ -68,32 +68,38 @@ class DatabaseService {
 
   /// テーブルのスキーマ情報を取得
   Future<TableSchema> getTableSchema(String table) async {
-    final colRows =
-        await _database.rawQuery('PRAGMA table_info(${_quote(table)})');
+    final colRows = await _database.rawQuery(
+      'PRAGMA table_info(${_quote(table)})',
+    );
     final columns = colRows.map(ColumnInfo.fromMap).toList();
 
-    final idxRows =
-        await _database.rawQuery('PRAGMA index_list(${_quote(table)})');
+    final idxRows = await _database.rawQuery(
+      'PRAGMA index_list(${_quote(table)})',
+    );
     final indexes = <IndexInfo>[];
     for (final idx in idxRows) {
       final idxName = idx['name'] as String;
-      final infoRows =
-          await _database.rawQuery('PRAGMA index_info(${_quote(idxName)})');
-      indexes.add(IndexInfo(
-        name: idxName,
-        unique: (idx['unique'] as int? ?? 0) != 0,
-        columns: infoRows
-            .map((r) => (r['name'] as String?) ?? '(expr)')
-            .toList(),
-      ));
+      final infoRows = await _database.rawQuery(
+        'PRAGMA index_info(${_quote(idxName)})',
+      );
+      indexes.add(
+        IndexInfo(
+          name: idxName,
+          unique: (idx['unique'] as int? ?? 0) != 0,
+          columns: infoRows
+              .map((r) => (r['name'] as String?) ?? '(expr)')
+              .toList(),
+        ),
+      );
     }
 
     final sqlRows = await _database.rawQuery(
       "SELECT sql FROM sqlite_master WHERE name = ?",
       [table],
     );
-    final createSql =
-        sqlRows.isNotEmpty ? sqlRows.first['sql'] as String? : null;
+    final createSql = sqlRows.isNotEmpty
+        ? sqlRows.first['sql'] as String?
+        : null;
 
     return TableSchema(
       name: table,
@@ -111,8 +117,9 @@ class DatabaseService {
     String? orderBy,
     bool descending = false,
   }) async {
-    final countRows = await _database
-        .rawQuery('SELECT COUNT(*) AS cnt FROM ${_quote(table)}');
+    final countRows = await _database.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM ${_quote(table)}',
+    );
     final total = countRows.first['cnt'] as int;
 
     final order = orderBy != null
@@ -147,7 +154,10 @@ class DatabaseService {
 
   /// rowidを指定して行を更新
   Future<void> updateRowByRowId(
-      String table, int rowId, Map<String, Object?> values) async {
+    String table,
+    int rowId,
+    Map<String, Object?> values,
+  ) async {
     await _database.update(
       table,
       values,
@@ -158,18 +168,15 @@ class DatabaseService {
 
   /// rowidを指定して行を削除
   Future<void> deleteRowByRowId(String table, int rowId) async {
-    await _database.delete(
-      table,
-      where: 'rowid = ?',
-      whereArgs: [rowId],
-    );
+    await _database.delete(table, where: 'rowid = ?', whereArgs: [rowId]);
   }
 
   /// 任意のSQLを実行する。SELECT系は結果を、更新系は影響行数を返す
   Future<QueryResult> executeSql(String sql) async {
     final stopwatch = Stopwatch()..start();
     final trimmed = sql.trim().toLowerCase();
-    final isQuery = trimmed.startsWith('select') ||
+    final isQuery =
+        trimmed.startsWith('select') ||
         trimmed.startsWith('pragma') ||
         trimmed.startsWith('with') ||
         trimmed.startsWith('explain');
@@ -229,6 +236,5 @@ class DatabaseService {
   }
 
   /// 識別子をダブルクォートでエスケープ
-  String _quote(String identifier) =>
-      '"${identifier.replaceAll('"', '""')}"';
+  String _quote(String identifier) => '"${identifier.replaceAll('"', '""')}"';
 }
