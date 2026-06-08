@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:window_manager/window_manager.dart';
 
 import '../services/database_service.dart';
 import '../widgets/data_grid_view.dart';
@@ -267,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const Divider(height: 1),
                   MenuItemButton(
-                    onPressed: () => exit(0),
+                    onPressed: () => windowManager.close(),
                     leadingIcon: const Icon(Icons.exit_to_app, size: 18),
                     child: const Text('終了'),
                   ),
