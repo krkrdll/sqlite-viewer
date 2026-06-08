@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
 import '../services/database_service.dart';
@@ -68,6 +71,66 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _createDatabase() async {
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: '新規データベースを作成',
+      fileName: 'new_database.db',
+      type: FileType.custom,
+      allowedExtensions: ['db', 'sqlite', 'sqlite3'],
+    );
+    if (path == null || !mounted) return;
+
+    // 既存ファイルがある場合は上書き確認
+    var overwrite = false;
+    if (File(path).existsSync()) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('上書き確認'),
+          content: Text('${p.basename(path)} は既に存在します。'
+              '削除して新規作成しますか？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('上書き'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      overwrite = true;
+    }
+
+    setState(() => _loading = true);
+    try {
+      await _dbService.create(path, overwrite: overwrite);
+      setState(() {
+        _tables = [];
+        _views = [];
+        _selectedTable = null;
+      });
+      // 空のDBなのでSQLタブを開いてテーブル作成を促す
+      _tabController.animateTo(2);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('データベースを作成しました。'
+                  'SQLタブでCREATE TABLE文を実行してテーブルを作成できます。')),
+        );
+      }
+    } catch (e) {
+      _showError('データベースの作成に失敗しました: $e');
+      await _dbService.close();
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
   Future<void> _refreshTables() async {
     if (!_dbService.isOpen) return;
     try {
@@ -99,36 +162,46 @@ class _HomeScreenState extends State<HomeScreen>
     final dbName = _dbService.path != null ? p.basename(_dbService.path!) : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(dbName != null ? 'SQLite Viewer — $dbName' : 'SQLite Viewer'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            tooltip: 'データベースを開く',
-            onPressed: _openDatabase,
+      body: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.keyN, control: true):
+              _createDatabase,
+          const SingleActivator(LogicalKeyboardKey.keyO, control: true):
+              _openDatabase,
+          const SingleActivator(LogicalKeyboardKey.f5): _refreshTables,
+        },
+        child: Focus(
+          autofocus: true,
+          child: Column(
+            children: [
+              _buildMenuBar(dbName),
+              if (_dbService.isOpen)
+                Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(icon: Icon(Icons.table_rows), text: 'データ'),
+                      Tab(icon: Icon(Icons.schema), text: 'スキーマ'),
+                      Tab(icon: Icon(Icons.code), text: 'SQL'),
+                    ],
+                  ),
+                ),
+              const Divider(height: 1),
+              Expanded(child: _buildBody()),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'テーブル一覧を更新',
-            onPressed: _dbService.isOpen ? _refreshTables : null,
-          ),
-        ],
-        bottom: _dbService.isOpen
-            ? TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(Icons.table_rows), text: 'データ'),
-                  Tab(icon: Icon(Icons.schema), text: 'スキーマ'),
-                  Tab(icon: Icon(Icons.code), text: 'SQL'),
-                ],
-              )
-            : null,
+        ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : !_dbService.isOpen
-              ? _buildWelcome()
-              : Row(
+    );
+  }
+
+  Widget _buildBody() {
+    return _loading
+        ? const Center(child: CircularProgressIndicator())
+        : !_dbService.isOpen
+            ? _buildWelcome()
+            : Row(
                   children: [
                     _buildSidebar(),
                     const VerticalDivider(width: 1),
@@ -159,7 +232,103 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ],
-                ),
+                );
+  }
+
+  Widget _buildMenuBar(String? dbName) {
+    final isOpen = _dbService.isOpen;
+    return Row(
+      children: [
+        Expanded(
+          child: MenuBar(
+            style: const MenuStyle(elevation: WidgetStatePropertyAll(0)),
+            children: [
+              SubmenuButton(
+                menuChildren: [
+                  MenuItemButton(
+                    onPressed: _createDatabase,
+                    shortcut: const SingleActivator(LogicalKeyboardKey.keyN,
+                        control: true),
+                    leadingIcon: const Icon(Icons.note_add, size: 18),
+                    child: const Text('新規作成...'),
+                  ),
+                  MenuItemButton(
+                    onPressed: _openDatabase,
+                    shortcut: const SingleActivator(LogicalKeyboardKey.keyO,
+                        control: true),
+                    leadingIcon: const Icon(Icons.folder_open, size: 18),
+                    child: const Text('開く...'),
+                  ),
+                  const Divider(height: 1),
+                  MenuItemButton(
+                    onPressed: isOpen ? _closeDatabase : null,
+                    leadingIcon: const Icon(Icons.close, size: 18),
+                    child: const Text('閉じる'),
+                  ),
+                  const Divider(height: 1),
+                  MenuItemButton(
+                    onPressed: () => exit(0),
+                    leadingIcon: const Icon(Icons.exit_to_app, size: 18),
+                    child: const Text('終了'),
+                  ),
+                ],
+                child: const Text('ファイル'),
+              ),
+              SubmenuButton(
+                menuChildren: [
+                  MenuItemButton(
+                    onPressed: isOpen ? _refreshTables : null,
+                    shortcut: const SingleActivator(LogicalKeyboardKey.f5),
+                    leadingIcon: const Icon(Icons.refresh, size: 18),
+                    child: const Text('テーブル一覧を更新'),
+                  ),
+                ],
+                child: const Text('表示'),
+              ),
+              SubmenuButton(
+                menuChildren: [
+                  MenuItemButton(
+                    onPressed: _showAbout,
+                    leadingIcon: const Icon(Icons.info_outline, size: 18),
+                    child: const Text('バージョン情報'),
+                  ),
+                ],
+                child: const Text('ヘルプ'),
+              ),
+            ],
+          ),
+        ),
+        if (dbName != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              dbName,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _closeDatabase() async {
+    await _dbService.close();
+    setState(() {
+      _tables = [];
+      _views = [];
+      _selectedTable = null;
+    });
+  }
+
+  void _showAbout() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'SQLite Viewer',
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(Icons.storage, size: 48),
+      children: [
+        const Text('SQLiteデータベースの閲覧・編集ツール'),
+      ],
     );
   }
 
@@ -173,10 +342,21 @@ class _HomeScreenState extends State<HomeScreen>
           const Text('SQLiteデータベースファイルを開いてください',
               style: TextStyle(fontSize: 16)),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            icon: const Icon(Icons.folder_open),
-            label: const Text('データベースを開く'),
-            onPressed: _openDatabase,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FilledButton.icon(
+                icon: const Icon(Icons.folder_open),
+                label: const Text('データベースを開く'),
+                onPressed: _openDatabase,
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.note_add),
+                label: const Text('新規作成'),
+                onPressed: _createDatabase,
+              ),
+            ],
           ),
         ],
       ),

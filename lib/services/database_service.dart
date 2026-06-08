@@ -20,6 +20,21 @@ class DatabaseService {
     _path = filePath;
   }
 
+  /// 新規データベースファイルを作成して開く。
+  /// 既存ファイルがある場合、overwriteがtrueなら削除して作り直す。
+  Future<void> create(String filePath, {bool overwrite = false}) async {
+    await close();
+    final file = File(filePath);
+    if (await file.exists()) {
+      if (!overwrite) {
+        throw StateError('ファイルが既に存在します: $filePath');
+      }
+      await file.delete();
+    }
+    _db = await databaseFactoryFfi.openDatabase(filePath);
+    _path = filePath;
+  }
+
   Future<void> close() async {
     await _db?.close();
     _db = null;
