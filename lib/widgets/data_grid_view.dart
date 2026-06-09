@@ -33,10 +33,20 @@ class _DataGridViewState extends State<DataGridView> {
   bool _loading = true;
   String? _error;
 
+  final _horizontalController = ScrollController();
+  final _verticalController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _horizontalController.dispose();
+    _verticalController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -275,61 +285,74 @@ class _DataGridViewState extends State<DataGridView> {
         : -1;
 
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: DataTable(
-              sortColumnIndex: sortIndex >= 0 ? sortIndex : null,
-              sortAscending: !_sortDescending,
-              headingRowHeight: 40,
-              dataRowMinHeight: 32,
-              dataRowMaxHeight: 40,
-              columns: [
-                ...page.columns.map(
-                  (c) => DataColumn(
-                    label: Text(
-                      c,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    onSort: (_, _) => _sort(c),
-                  ),
-                ),
-                if (!widget.readOnly)
-                  const DataColumn(
-                    label: Text('操作'),
-                    columnWidth: FixedColumnWidth(0),
-                  ),
-              ],
-              rows: page.rows.map((row) {
-                return DataRow(
-                  cells: [
-                    ...page.columns.map((c) => DataCell(_buildCell(row[c]))),
-                    if (!widget.readOnly)
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, size: 16),
-                              tooltip: '編集',
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => _editRow(row),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 16),
-                              tooltip: '削除',
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => _deleteRow(row),
-                            ),
-                          ],
+      builder: (context, constraints) => Scrollbar(
+        controller: _verticalController,
+        thumbVisibility: true,
+        child: Scrollbar(
+          controller: _horizontalController,
+          thumbVisibility: true,
+          notificationPredicate: (notification) => notification.depth == 1,
+          child: SingleChildScrollView(
+            controller: _verticalController,
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              controller: _horizontalController,
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: DataTable(
+                  columnSpacing: 24,
+                  sortColumnIndex: sortIndex >= 0 ? sortIndex : null,
+                  sortAscending: !_sortDescending,
+                  headingRowHeight: 40,
+                  dataRowMinHeight: 32,
+                  dataRowMaxHeight: 40,
+                  columns: [
+                    ...page.columns.map(
+                      (c) => DataColumn(
+                        label: Text(
+                          c,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
+                        onSort: (_, _) => _sort(c),
                       ),
+                    ),
+                    if (!widget.readOnly) const DataColumn(label: Text('操作')),
                   ],
-                );
-              }).toList(),
+                  rows: page.rows.map((row) {
+                    return DataRow(
+                      cells: [
+                        ...page.columns.map(
+                          (c) => DataCell(_buildCell(row[c])),
+                        ),
+                        if (!widget.readOnly)
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, size: 16),
+                                  tooltip: '編集',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => _editRow(row),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 16,
+                                  ),
+                                  tooltip: '削除',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => _deleteRow(row),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ),
         ),

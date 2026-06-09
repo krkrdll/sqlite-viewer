@@ -152,9 +152,9 @@ class _HomeScreenState extends State<HomeScreen>
     await _refreshTables();
     setState(() => _selectedTable = created);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('テーブル「$created」を作成しました')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('テーブル「$created」を作成しました')));
     }
   }
 
@@ -208,28 +208,30 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               _buildMenuBar(dbName),
               if (_dbService.isOpen)
-                Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.grey,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicator: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    tabs: const [
-                      Tab(
-                        child: _TabLabel(icon: Icons.table_rows, text: 'データ'),
-                      ),
-                      Tab(
-                        child: _TabLabel(icon: Icons.schema, text: 'スキーマ'),
-                      ),
-                      Tab(
-                        child: _TabLabel(icon: Icons.code, text: 'SQL'),
-                      ),
-                    ],
+                TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  tabs: const [
+                    Tab(
+                      height: 32,
+                      child: _TabLabel(icon: Icons.table_rows, text: 'データ'),
+                    ),
+                    Tab(
+                      height: 32,
+                      child: _TabLabel(icon: Icons.schema, text: 'スキーマ'),
+                    ),
+                    Tab(
+                      height: 32,
+                      child: _TabLabel(icon: Icons.code, text: 'SQL'),
+                    ),
+                  ],
                 ),
               const Divider(height: 1),
               Expanded(child: _buildBody()),

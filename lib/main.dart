@@ -35,6 +35,7 @@ class SqliteViewerApp extends StatelessWidget {
         menuTheme: const MenuThemeData(
           style: MenuStyle(
             backgroundColor: WidgetStatePropertyAll(Colors.white),
+            padding: WidgetStatePropertyAll(EdgeInsets.zero),
           ),
         ),
         cardTheme: CardThemeData(

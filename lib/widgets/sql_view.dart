@@ -17,6 +17,8 @@ class SqlView extends StatefulWidget {
 
 class _SqlViewState extends State<SqlView> with AutomaticKeepAliveClientMixin {
   final _controller = TextEditingController();
+  final _horizontalController = ScrollController();
+  final _verticalController = ScrollController();
   QueryResult? _result;
   String? _error;
   bool _running = false;
@@ -27,6 +29,8 @@ class _SqlViewState extends State<SqlView> with AutomaticKeepAliveClientMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _horizontalController.dispose();
+    _verticalController.dispose();
     super.dispose();
   }
 
@@ -181,35 +185,47 @@ class _SqlViewState extends State<SqlView> with AutomaticKeepAliveClientMixin {
     }
 
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: DataTable(
-              headingRowHeight: 40,
-              dataRowMinHeight: 32,
-              dataRowMaxHeight: 40,
-              columns: result.columns
-                  .map(
-                    (c) => DataColumn(
-                      label: Text(
-                        c,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              rows: result.rows
-                  .map(
-                    (row) => DataRow(
-                      cells: result.columns
-                          .map((c) => DataCell(_buildCell(row[c])))
-                          .toList(),
-                    ),
-                  )
-                  .toList(),
+      builder: (context, constraints) => Scrollbar(
+        controller: _verticalController,
+        thumbVisibility: true,
+        child: Scrollbar(
+          controller: _horizontalController,
+          thumbVisibility: true,
+          notificationPredicate: (notification) => notification.depth == 1,
+          child: SingleChildScrollView(
+            controller: _verticalController,
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              controller: _horizontalController,
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: DataTable(
+                  columnSpacing: 24,
+                  headingRowHeight: 40,
+                  dataRowMinHeight: 32,
+                  dataRowMaxHeight: 40,
+                  columns: result.columns
+                      .map(
+                        (c) => DataColumn(
+                          label: Text(
+                            c,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  rows: result.rows
+                      .map(
+                        (row) => DataRow(
+                          cells: result.columns
+                              .map((c) => DataCell(_buildCell(row[c])))
+                              .toList(),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
             ),
           ),
         ),
