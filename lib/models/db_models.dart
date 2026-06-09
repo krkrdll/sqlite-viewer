@@ -1,3 +1,79 @@
+/// SQLiteで利用できる代表的なカラム型
+const List<String> kSqliteColumnTypes = [
+  'INTEGER',
+  'TEXT',
+  'REAL',
+  'NUMERIC',
+  'BLOB',
+];
+
+/// 新規テーブル作成時の1カラム分の定義（GUI入力用）
+class NewColumnDef {
+  String name;
+  String type;
+  bool primaryKey;
+  bool autoIncrement;
+  bool notNull;
+  bool unique;
+  String defaultValue;
+
+  NewColumnDef({
+    this.name = '',
+    this.type = 'INTEGER',
+    this.primaryKey = false,
+    this.autoIncrement = false,
+    this.notNull = false,
+    this.unique = false,
+    this.defaultValue = '',
+  });
+}
+
+/// 識別子をダブルクォートでエスケープ
+String quoteSqlIdentifier(String identifier) =>
+    '"${identifier.replaceAll('"', '""')}"';
+
+/// カラム定義から CREATE TABLE 文を組み立てる。
+/// 主キーが複数指定された場合はテーブルレベルの制約として出力する。
+String buildCreateTableSql(String tableName, List<NewColumnDef> columns) {
+  final pkColumns = columns.where((c) => c.primaryKey).toList();
+  final useInlinePk = pkColumns.length == 1;
+
+  final defs = <String>[];
+  for (final c in columns) {
+    final buf = StringBuffer(quoteSqlIdentifier(c.name.trim()));
+    if (c.type.trim().isNotEmpty) {
+      buf.write(' ${c.type.trim()}');
+    }
+    if (useInlinePk && c.primaryKey) {
+      buf.write(' PRIMARY KEY');
+      if (c.autoIncrement) {
+        buf.write(' AUTOINCREMENT');
+      }
+    }
+    if (c.notNull) {
+      buf.write(' NOT NULL');
+    }
+    if (c.unique) {
+      buf.write(' UNIQUE');
+    }
+    if (c.defaultValue.trim().isNotEmpty) {
+      buf.write(' DEFAULT ${c.defaultValue.trim()}');
+    }
+    defs.add(buf.toString());
+  }
+
+  if (pkColumns.length > 1) {
+    final cols = pkColumns
+        .map((c) => quoteSqlIdentifier(c.name.trim()))
+        .join(', ');
+    defs.add('PRIMARY KEY ($cols)');
+  }
+
+  return 'CREATE TABLE ${quoteSqlIdentifier(tableName.trim())} (\n'
+      '  ${defs.join(',\n  ')}\n'
+      ')';
+}
+
 /// テーブルのカラム定義（PRAGMA table_info の結果）
 class ColumnInfo {
   final int cid;

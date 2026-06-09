@@ -25,9 +25,22 @@ class SqliteViewerApp extends StatelessWidget {
       title: 'SQLite Viewer',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         dialogTheme: const DialogThemeData(
           backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+        ),
+        menuTheme: const MenuThemeData(
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.white),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
         ),
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,

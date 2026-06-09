@@ -147,6 +147,15 @@ class DatabaseService {
     );
   }
 
+  /// カラム定義から新規テーブルを作成する
+  Future<void> createTable(
+    String tableName,
+    List<NewColumnDef> columns,
+  ) async {
+    final sql = buildCreateTableSql(tableName, columns);
+    await _database.execute(sql);
+  }
+
   /// 行を挿入
   Future<void> insertRow(String table, Map<String, Object?> values) async {
     await _database.insert(table, values);

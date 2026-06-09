@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 import '../services/database_service.dart';
+import '../widgets/create_table_dialog.dart';
 import '../widgets/data_grid_view.dart';
 import '../widgets/schema_view.dart';
 import '../widgets/sql_view.dart';
@@ -137,6 +138,26 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  /// テーブル新規作成ダイアログを開く
+  Future<void> _showCreateTableDialog() async {
+    if (!_dbService.isOpen) return;
+    final created = await showDialog<String>(
+      context: context,
+      builder: (context) => CreateTableDialog(
+        existingNames: [..._tables, ..._views],
+        onCreate: (name, columns) => _dbService.createTable(name, columns),
+      ),
+    );
+    if (created == null) return;
+    await _refreshTables();
+    setState(() => _selectedTable = created);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('テーブル「$created」を作成しました')),
+      );
+    }
+  }
+
   Future<void> _refreshTables() async {
     if (!_dbService.isOpen) return;
     try {
@@ -177,6 +198,9 @@ class _HomeScreenState extends State<HomeScreen>
           const SingleActivator(LogicalKeyboardKey.keyO, control: true):
               _openDatabase,
           const SingleActivator(LogicalKeyboardKey.f5): _refreshTables,
+          const SingleActivator(LogicalKeyboardKey.keyT, control: true): () {
+            if (_dbService.isOpen) _showCreateTableDialog();
+          },
         },
         child: Focus(
           autofocus: true,
@@ -261,7 +285,10 @@ class _HomeScreenState extends State<HomeScreen>
       children: [
         Expanded(
           child: MenuBar(
-            style: const MenuStyle(elevation: WidgetStatePropertyAll(0)),
+            style: const MenuStyle(
+              elevation: WidgetStatePropertyAll(0),
+              backgroundColor: WidgetStatePropertyAll(Colors.white),
+            ),
             children: [
               SubmenuButton(
                 menuChildren: [
@@ -297,6 +324,20 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ],
                 child: const Text('ファイル'),
+              ),
+              SubmenuButton(
+                menuChildren: [
+                  MenuItemButton(
+                    onPressed: isOpen ? _showCreateTableDialog : null,
+                    shortcut: const SingleActivator(
+                      LogicalKeyboardKey.keyT,
+                      control: true,
+                    ),
+                    leadingIcon: const Icon(Icons.add_box_outlined, size: 18),
+                    child: const Text('テーブルを新規作成...'),
+                  ),
+                ],
+                child: const Text('テーブル'),
               ),
               SubmenuButton(
                 menuChildren: [
@@ -394,17 +435,27 @@ class _HomeScreenState extends State<HomeScreen>
       width: 240,
       child: ListView(
         children: [
-          if (_tables.isNotEmpty)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(
-                'テーブル',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+            child: Row(
+              children: [
+                const Text(
+                  'テーブル',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.add, size: 18),
+                  tooltip: 'テーブルを新規作成 (Ctrl+T)',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _showCreateTableDialog,
+                ),
+              ],
             ),
+          ),
           ..._tables.map(
             (t) => _buildItemTile(name: t, icon: Icons.table_chart),
           ),
